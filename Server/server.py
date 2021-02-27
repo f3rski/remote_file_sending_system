@@ -13,12 +13,13 @@ class Server:
     """Websocket server component"""
     BREAK_FLAG = False
     SEPARATOR = "<sep>"
+    BUFFER_SIZE = 1024
 
     def __init__(self):
         signal.signal(signal.SIGINT, sigint_signal_handler)
         self.__ip = "0.0.0.0"
         self.__port = 5001
-        self.__buffer_size = 4096
+        self.__buffer_size = Server.BUFFER_SIZE
         self.__socket = None
 
         self.__initialize()
@@ -33,19 +34,17 @@ class Server:
 
     def start(self):
         self.__start_listening()
-        while True:
-            # accept connection if there is any
+        while not Server.BREAK_FLAG:
             connection, address = self.__socket.accept()
-            # if below code is executed, that means the sender is connected
             print(f"[+] {address} is connected.")
 
-            # receive the file infos
-            # receive using client socket, not server socket
             received = connection.recv(self.__buffer_size).decode()
             filename, filesize = received.split(Server.SEPARATOR)
+
             # remove absolute path if there is
             filename = os.path.basename(filename)
             print(f"Receiving: {filename}, with size: {filesize}")
+
             # start receiving the file from the socket
             # and writing to the file stream
             with open(filename, "wb") as f:
